@@ -158,6 +158,20 @@ def ingest_source(source_id) -> dict:
                     result["skipped"] += 1
                     continue
 
+                published_at = parse_published_date(entry)
+
+                cutoff = datetime.now(timezone.utc) - timedelta(days=365)
+
+                # Skip articles outside the rolling 365-day window.
+                # Also skip articles without a reliable publication date.
+                if (
+                    published_at is None
+                    or published_at < cutoff
+                    or published_at > datetime.now(timezone.utc)
+                ):
+                    result["skipped"] += 1
+                    continue
+
                 description = clean_html(
                     entry.get("summary") or entry.get("description")
                 )
@@ -176,7 +190,7 @@ def ingest_source(source_id) -> dict:
                     content=content,
                     content_type="article",
                     language=source.language or "en",
-                    published_at=parse_published_date(entry),
+                    published_at=published_at,
                     discovered_at=datetime.now(timezone.utc),
                     content_hash=create_content_hash(
                         title, canonical_url or original_url
@@ -256,14 +270,21 @@ def ingest_source(source_id) -> dict:
     return result
 
 
+
 def ingest_all_healthy_sources() -> dict:
+    now = datetime.now(timezone.utc)
+
     with SessionLocal() as db:
         source_ids = db.scalars(
             select(Source.id).where(
                 Source.is_active.is_(True),
                 Source.source_type == "rss",
-                Source.health_status == "healthy",
-            )
+                Source.health_status.in_(["healthy", "failing"]),
+                or_(
+                    Source.next_fetch_at.is_(None),
+                    Source.next_fetch_at <= now,
+                ),
+            ).order_by(Source.priority.desc())
         ).all()
 
     summary = {
@@ -290,6 +311,7 @@ def ingest_all_healthy_sources() -> dict:
             summary["failed_sources"] += 1
 
     return summary
+
 
 
 if __name__ == "__main__":
