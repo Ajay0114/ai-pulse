@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import ArticleCard from "@/components/ArticleCard";
+import TopicTile from "@/components/TopicTile";
+import { DISCOVER_TOPICS } from "@/lib/discoverTopics";
 import { Article, ArticleListResponse, Source } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -140,6 +143,29 @@ export default function Home() {
                 detail="Article feed pagination"
                 icon="◷"
               />
+            </section>
+
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Explore by topic</h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Jump into a curated feed for a specific area of AI.
+                  </p>
+                </div>
+                <Link
+                  href="/discover"
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                >
+                  View all →
+                </Link>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {DISCOVER_TOPICS.slice(0, 6).map((topic) => (
+                  <TopicTile key={topic.slug} item={topic} variant="compact" />
+                ))}
+              </div>
             </section>
 
             <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
