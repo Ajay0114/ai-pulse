@@ -116,6 +116,30 @@ class Article(Base, TimestampMixin):
         nullable=True,
     )
 
+    relevance_status: Mapped[str] = mapped_column(
+        String(30),
+        default="pending",
+        nullable=False,
+        index=True,
+    )
+
+    relevance_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    importance_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    feed_type: Mapped[str] = mapped_column(
+        String(30),
+        default="pending",
+        nullable=False,
+        index=True,
+    )
+
     engagement_count: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
@@ -131,6 +155,23 @@ class Article(Base, TimestampMixin):
         String(30),
         default="pending",
         nullable=False,
+    )
+
+    processing_attempts: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+
+    last_processing_error: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    next_retry_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
     )
 
     source: Mapped["Source"] = relationship(

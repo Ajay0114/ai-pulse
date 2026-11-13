@@ -64,6 +64,32 @@ class ArticlePersistenceService:
 
         return tag
 
+    def save_relevance(
+        self,
+        db: Session,
+        article_id: UUID,
+        result: dict[str, Any],
+    ) -> Article:
+
+        article = db.query(Article).filter(
+            Article.id == article_id
+        ).first()
+
+        if not article:
+            raise ValueError(f"Article not found: {article_id}")
+
+        # 1. Save relevance classification
+        article.relevance_status = result["relevance_status"]
+        article.relevance_score = float(result["relevance_score"])
+        article.feed_type = result["feed_type"]
+        article.importance_reason = result["importance_reason"]
+
+        # 2. Keep classification separate from enrichment.
+        # The caller controls the transaction.
+        db.flush()
+
+        return article
+
     def save_enrichment(
         self,
         db: Session,

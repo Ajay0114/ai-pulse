@@ -19,6 +19,51 @@ logger = logging.getLogger(__name__)
 
 USER_AGENT = "AI-Pulse/0.1 (+https://localhost)"
 
+# First fetch after a reset: only consider the previous 24 hours.
+INITIAL_LOOKBACK = timedelta(hours=24)
+
+# Subsequent fetches: overlap the last successful fetch by 2 hours.
+FETCH_OVERLAP = timedelta(hours=2)
+
+# Limit initial research candidates from each arXiv feed.
+MAX_ARXIV_CANDIDATES_PER_FEED = 10
+
+# Lightweight prefilter. The relevance classifier makes the final decision.
+ARXIV_SIGNAL_TERMS = (
+    "large language model",
+    "language model",
+    "reasoning",
+    "agent",
+    "agentic",
+    "multimodal",
+    "vision-language",
+    "vision language",
+    "alignment",
+    "inference",
+    "training",
+    "fine-tuning",
+    "finetuning",
+    "benchmark",
+    "evaluation",
+    "retrieval",
+    "rag",
+    "diffusion",
+    "robotics",
+    "robot",
+    "safety",
+    "long context",
+    "memory",
+    "tool use",
+    "synthetic data",
+    "efficient attention",
+    "model compression",
+    "mixture of experts",
+    "reinforcement learning",
+    "computer use",
+    "code generation",
+    "world model",
+)
+
 
 def clean_html(value: str | None) -> str | None:
     if not value:
@@ -44,17 +89,23 @@ def parse_published_date(entry) -> datetime | None:
 
     try:
         parsed = parsedate_to_datetime(date_value)
+
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
+
         return parsed.astimezone(timezone.utc)
+
     except (TypeError, ValueError, OverflowError):
         try:
             from dateutil import parser
 
             parsed = parser.parse(date_value)
+
             if parsed.tzinfo is None:
                 parsed = parsed.replace(tzinfo=timezone.utc)
+
             return parsed.astimezone(timezone.utc)
+
         except (TypeError, ValueError, OverflowError):
             return None
 
@@ -64,6 +115,7 @@ def extract_entry_content(entry) -> str | None:
 
     if content_items:
         content = content_items[0].get("value")
+
         if content:
             return clean_html(content)
 
@@ -77,6 +129,28 @@ def create_content_hash(title: str, url: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def is_arxiv_source(source: Source) -> bool:
+    return "arxiv" in (source.name or "").lower()
+
+
+def is_high_signal_arxiv_entry(entry) -> bool:
+    title = entry.get("title") or ""
+    description = (
+        entry.get("summary")
+        or entry.get("description")
+        or ""
+    )
+
+    searchable_text = (
+        f"{title} {description}"
+    ).lower()
+
+    return any(
+        term in searchable_text
+        for term in ARXIV_SIGNAL_TERMS
+    )
+
+
 def ingest_source(source_id) -> dict:
     started_at = datetime.now(timezone.utc)
 
@@ -87,6 +161,7 @@ def ingest_source(source_id) -> dict:
         "skipped": 0,
         "status": "failed",
         "error": None,
+        "fetch_window": None,
     }
 
     with SessionLocal() as db:
@@ -98,6 +173,25 @@ def ingest_source(source_id) -> dict:
 
         result["source"] = source.name
 
+        # Capture the last successful fetch before making the request.
+        # Failed fetches must never advance this watermark.
+        last_successful_fetch = source.last_fetched_at
+
+        if last_successful_fetch is None:
+            fetch_cutoff = started_at - INITIAL_LOOKBACK
+            result["fetch_window"] = "initial_24_hours"
+        else:
+            if last_successful_fetch.tzinfo is None:
+                last_successful_fetch = last_successful_fetch.replace(
+                    tzinfo=timezone.utc
+                )
+
+            fetch_cutoff = (
+                last_successful_fetch.astimezone(timezone.utc)
+                - FETCH_OVERLAP
+            )
+            result["fetch_window"] = "incremental_with_2h_overlap"
+
         log = IngestionLog(
             source_id=source.id,
             status="running",
@@ -106,6 +200,7 @@ def ingest_source(source_id) -> dict:
             records_skipped=0,
             started_at=started_at,
         )
+
         db.add(log)
         db.flush()
 
@@ -128,12 +223,74 @@ def ingest_source(source_id) -> dict:
 
             result["discovered"] = len(parsed_feed.entries)
 
+            now = datetime.now(timezone.utc)
+            eligible_entries = []
+
+            # First filter by publication date.
             for entry in parsed_feed.entries:
+                published_at = parse_published_date(entry)
+
+                if (
+                    published_at is None
+                    or published_at < fetch_cutoff
+                    or published_at > now
+                ):
+                    result["skipped"] += 1
+                    continue
+
                 title = (entry.get("title") or "").strip()
                 original_url = entry.get("link")
                 canonical_url = normalize_url(original_url)
 
-                if not title or not original_url:
+                if not title or not original_url or not canonical_url:
+                    result["skipped"] += 1
+                    continue
+
+                eligible_entries.append(
+                    (published_at, entry, title, original_url, canonical_url)
+                )
+
+            # arXiv produces a high volume of routine papers.
+            # Keep only high-signal candidates, with a per-feed cap.
+            if is_arxiv_source(source):
+                eligible_entries = [
+                    item
+                    for item in eligible_entries
+                    if is_high_signal_arxiv_entry(item[1])
+                ]
+
+                eligible_entries.sort(
+                    key=lambda item: item[0],
+                    reverse=True,
+                )
+
+                selected_entries = eligible_entries[
+                    :MAX_ARXIV_CANDIDATES_PER_FEED
+                ]
+
+                result["skipped"] += (
+                    len(eligible_entries) - len(selected_entries)
+                )
+
+                eligible_entries = selected_entries
+
+            # Insert eligible articles, checking duplicates globally
+            # across all sources using canonical URL.
+            for (
+                published_at,
+                entry,
+                title,
+                original_url,
+                canonical_url,
+            ) in eligible_entries:
+
+                existing = db.scalar(
+                    select(Article.id)
+                    .where(Article.canonical_url == canonical_url)
+                    .limit(1)
+                )
+
+                if existing:
                     result["skipped"] += 1
                     continue
 
@@ -144,37 +301,10 @@ def ingest_source(source_id) -> dict:
                 )
                 external_id = str(external_id)[:500]
 
-                existing = db.scalar(
-                    select(Article.id).where(
-                        Article.source_id == source.id,
-                        or_(
-                            Article.external_id == external_id,
-                            Article.canonical_url == canonical_url,
-                        ),
-                    ).limit(1)
-                )
-
-                if existing:
-                    result["skipped"] += 1
-                    continue
-
-                published_at = parse_published_date(entry)
-
-                cutoff = datetime.now(timezone.utc) - timedelta(days=365)
-
-                # Skip articles outside the rolling 365-day window.
-                # Also skip articles without a reliable publication date.
-                if (
-                    published_at is None
-                    or published_at < cutoff
-                    or published_at > datetime.now(timezone.utc)
-                ):
-                    result["skipped"] += 1
-                    continue
-
                 description = clean_html(
                     entry.get("summary") or entry.get("description")
                 )
+
                 content = extract_entry_content(entry)
 
                 article = Article(
@@ -183,9 +313,7 @@ def ingest_source(source_id) -> dict:
                     title=title[:1000],
                     original_url=original_url,
                     canonical_url=canonical_url,
-                    author=(
-                        entry.get("author") or None
-                    ),
+                    author=entry.get("author") or None,
                     description=description,
                     content=content,
                     content_type="article",
@@ -193,7 +321,8 @@ def ingest_source(source_id) -> dict:
                     published_at=published_at,
                     discovered_at=datetime.now(timezone.utc),
                     content_hash=create_content_hash(
-                        title, canonical_url or original_url
+                        title,
+                        canonical_url,
                     ),
                     processing_status="pending",
                 )
@@ -205,6 +334,7 @@ def ingest_source(source_id) -> dict:
 
             completed_at = datetime.now(timezone.utc)
 
+            # Advance the watermark only after a successful fetch.
             source.last_fetched_at = completed_at
             source.health_status = "healthy"
             source.consecutive_failures = 0
@@ -233,25 +363,31 @@ def ingest_source(source_id) -> dict:
             result["status"] = "failed"
             result["error"] = str(exc)
 
-            # Record failure separately so the log survives rollback.
+            # Reload source after rollback.
             source = db.get(Source, source_id)
 
             if source:
                 now = datetime.now(timezone.utc)
-                source.last_fetched_at = now
+
+                # Do not update last_fetched_at here.
+                # It represents the last successful fetch.
                 source.health_status = (
                     "blocked"
                     if isinstance(exc, httpx.HTTPStatusError)
                     and exc.response.status_code in (401, 403, 429)
                     else "failing"
                 )
-                source.consecutive_failures += 1
+
+                source.consecutive_failures = (
+                    source.consecutive_failures or 0
+                ) + 1
 
                 delay = min(
                     source.poll_interval_minutes
                     * 2 ** min(source.consecutive_failures, 6),
                     1440,
                 )
+
                 source.next_fetch_at = now + timedelta(minutes=delay)
 
             failure_log = IngestionLog(
@@ -264,11 +400,11 @@ def ingest_source(source_id) -> dict:
                 started_at=started_at,
                 completed_at=datetime.now(timezone.utc),
             )
+
             db.add(failure_log)
             db.commit()
 
     return result
-
 
 
 def ingest_all_healthy_sources() -> dict:
@@ -313,7 +449,6 @@ def ingest_all_healthy_sources() -> dict:
     return summary
 
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
@@ -332,6 +467,7 @@ if __name__ == "__main__":
         print(
             f"{item['source']}: "
             f"{item['status']} | "
+            f"Window: {item['fetch_window']} | "
             f"Created: {item['created']} | "
             f"Skipped: {item['skipped']} | "
             f"Error: {item['error'] or 'None'}"

@@ -26,7 +26,7 @@ AI-related news from global sources.
 - docs: Technical documentation
 - scripts: Development utilities
 
-
-/mnt/d/Agents/ai-pulse/apps/backend$ source .venv/bin/activate
+source .venv/bin/activate
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+npm run dev
 

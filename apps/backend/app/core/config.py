@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "openrouter"
     OPENROUTER_API_KEY: str = ""
     LLM_MODEL: str = "openai/gpt-4.1-mini"
+    EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
 
     model_config = SettingsConfigDict(

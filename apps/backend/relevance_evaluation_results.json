@@ -1,0 +1,230 @@
+[
+  {
+    "id": "27011586-debc-42f1-876f-5f6d19ebb8b0",
+    "title": "Helping caregivers use AI in everyday life",
+    "source": "OpenAI Blog",
+    "old": {
+      "score": 5.0,
+      "feed": "main",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 3,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article describes free ChatGPT workshops for caregivers to build practical AI skills, which is a community outreach and educational effort without introducing new AI capabilities, products, or research breakthroughs."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "fa848166-1dd5-4540-84ef-fff7633c98c3",
+    "title": "Pay for Hugging Face Hub with your Google Cloud Account",
+    "source": "Hugging Face Blog",
+    "old": {
+      "score": 5.0,
+      "feed": "main",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 3,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article describes a billing convenience integration allowing payment for Hugging Face Hub via Google Cloud accounts, which does not introduce meaningful new AI capabilities or significant ecosystem impact."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "3457fe11-fa1f-4b25-9cb2-e27e78618e3c",
+    "title": "BiMuon: A Geometry-Aware Stochastic Bilevel Optimization Approach",
+    "source": "arXiv Machine Learning",
+    "old": {
+      "score": 6.0,
+      "feed": "research",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "relevant",
+      "relevance_score": 8,
+      "feed_type": "research",
+      "category": "research_breakthrough",
+      "importance_reason": "Introduces BiMuon, a novel geometry-aware stochastic bilevel optimization method with theoretical iteration-complexity guarantees and empirical validation, addressing key limitations in bilevel optimization relevant to multiple machine learning applications."
+    },
+    "changed": false,
+    "error": null
+  },
+  {
+    "id": "5a9655aa-2243-406b-b134-f7801b4d01f0",
+    "title": "The indie game community is in disarray over AI and Big Walk",
+    "source": "The Verge AI",
+    "old": {
+      "score": 5.0,
+      "feed": "main",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 3,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article discusses controversy in the indie game community regarding the use of generative AI in game development, which is a niche cultural and ethical debate without broader technical, product, or industry impact relevant to AI Pulse's professional audience."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "791fcecc-5c4e-432c-b6fc-6edfd2d90c9b",
+    "title": "AYO: A Safe and Privacy-Preserving Platform for Studying Children's Interaction with LLMs",
+    "source": "arXiv Artificial Intelligence",
+    "old": {
+      "score": 6.0,
+      "feed": "research",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "relevant",
+      "relevance_score": 8,
+      "feed_type": "research",
+      "category": "research_breakthrough",
+      "importance_reason": "Introduces AYO, an open-source platform with safety, privacy, and monitoring features enabling systematic research on children's interactions with LLMs, addressing a significant AI safety and privacy research gap with broad implications for AI design and policy."
+    },
+    "changed": false,
+    "error": null
+  },
+  {
+    "id": "1f6b9c79-f274-4016-9ec7-dfb98ca86fc4",
+    "title": "Topological Deep Learning Challenge 2026: Bridging the Gap",
+    "source": "arXiv Machine Learning",
+    "old": {
+      "score": 6.0,
+      "feed": "research",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 4,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article describes a challenge and leaderboard comparing Graph Neural Networks and Topological Neural Networks on synthetic benchmarks, but it primarily announces the competition and summarizes results without presenting a substantial original scientific contribution or broadly significant findings beyond the challenge itself."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "10a7659f-fbe2-4a57-968b-e4f42be6c5b3",
+    "title": "DramaGrow: A Regime-Aware Benchmark for Auditing LLM Judges of Multi-Episode Drama",
+    "source": "arXiv Computation and Language",
+    "old": {
+      "score": 6.0,
+      "feed": "research",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 6,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article introduces DramaGrow, a benchmark for auditing LLM judges on multi-episode drama, which is a narrow domain-specific evaluation dataset without evidence of broad AI research significance or generalizable technical contributions."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "1a6c6065-db58-4627-9e1e-6687b118bec7",
+    "title": "BIBIMBAP: A Benchmark for Instructional BIM-Based Automated Programming",
+    "source": "arXiv Computation and Language",
+    "old": {
+      "score": 6.0,
+      "feed": "research",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 4,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article introduces a benchmark focused on evaluating LLMs for a narrow domain-specific task (instructional BIM-based automated programming). It does not demonstrate broad AI research significance or a substantial technical contribution beyond this specialized application."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "85a011af-2287-461e-9e7a-9f1655a1daec",
+    "title": "Locating the source of a mysterious beep with Claude",
+    "source": "Simon Willison",
+    "old": {
+      "score": 6.0,
+      "feed": "main",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 3,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article describes a personal project using Claude to build a software system for locating a beep source in a room. It is a hobbyist application of existing AI tools without introducing new AI capabilities, models, or broadly significant technical or product developments."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "f79c13ee-3455-4a52-9c7b-d44b7e10706e",
+    "title": "CulturalCrosswords: A Multilingual Benchmark comprised of Answer Constraints and Grid Completion",
+    "source": "arXiv Computation and Language",
+    "old": {
+      "score": 6.0,
+      "feed": "research",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "irrelevant",
+      "relevance_score": 4,
+      "feed_type": "excluded",
+      "category": "irrelevant",
+      "importance_reason": "The article introduces a multilingual crossword benchmark focused on evaluating LLMs' handling of answer constraints in cultural riddles, which is a narrow domain-specific evaluation without evidence of broad AI research significance or substantial technical contribution."
+    },
+    "changed": true,
+    "error": null
+  },
+  {
+    "id": "e5ce6b8b-1dee-4ed4-a1ac-9c0ba5a98545",
+    "title": "Work at the Frontier: AI’s effect on freelance work",
+    "source": "OpenAI Blog",
+    "old": {
+      "score": 6.0,
+      "feed": "main",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "relevant",
+      "relevance_score": 7,
+      "feed_type": "main",
+      "category": "industry_news",
+      "importance_reason": "The article reports credible industry research from OpenAI and Upwork showing meaningful changes in freelance work demand, skill combinations, and budgets driven by AI-related projects, indicating significant AI impact on labor markets."
+    },
+    "changed": false,
+    "error": null
+  },
+  {
+    "id": "d89ff6a0-cc5c-4a87-87ec-b335194ba4c0",
+    "title": "Hands-on with Ring’s new AI drone camera for your home",
+    "source": "The Verge AI",
+    "old": {
+      "score": 6.0,
+      "feed": "main",
+      "status": "relevant"
+    },
+    "new": {
+      "relevance_status": "relevant",
+      "relevance_score": 7,
+      "feed_type": "main",
+      "category": "product_update",
+      "importance_reason": "The article covers the launch of Ring's AI-powered indoor drone camera, a meaningful AI-powered consumer hardware product introducing autonomous flying surveillance capabilities."
+    },
+    "changed": false,
+    "error": null
+  }
+]
