@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
+import ArticleCard from "@/components/ArticleCard";
+import { Article, ArticleListResponse } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -37,25 +39,6 @@ const modelCategories = [
   { name: "AI Development Tools", query: "AI developer tools", icon: "🛠️" },
 ];
 
-type Article = {
-  id: string;
-  title: string;
-  description?: string | null;
-  original_url: string;
-  published_at?: string | null;
-  content_type: string;
-  source: { name: string };
-};
-
-function formatDate(value?: string | null) {
-  if (!value) return "Date unavailable";
-  return new Date(value).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export default function DiscoverPage() {
   const [selectedTopic, setSelectedTopic] = useState("");
   const [articles, setArticles] = useState<Article[]>([]);
@@ -82,7 +65,7 @@ export default function DiscoverPage() {
         throw new Error(`Article API returned HTTP ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: ArticleListResponse = await response.json();
       setArticles(data.articles ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to discover articles.");
@@ -222,30 +205,10 @@ export default function DiscoverPage() {
               </p>
             )}
 
-            {!loading && articles.map((article) => (
-              <article key={article.id} className="border-b border-slate-100 py-4 last:border-0">
-                <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                  <span className="font-semibold text-blue-700">
-                    {article.source?.name ?? "Unknown source"}
-                  </span>
-                  <span>{formatDate(article.published_at)}</span>
-                </div>
-                <h3 className="mt-2 font-semibold">{article.title}</h3>
-                {article.description && (
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {article.description}
-                  </p>
-                )}
-                <a
-                  href={article.original_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-block text-sm font-semibold text-blue-600 hover:text-blue-800"
-                >
-                  Read original article ↗
-                </a>
-              </article>
-            ))}
+            {!loading &&
+              articles.map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
           </section>
         </main>
       </div>

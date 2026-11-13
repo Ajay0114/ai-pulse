@@ -16,6 +16,18 @@ def create_slug(value: str) -> str:
     return value.strip("-")[:120]
 
 
+# The relevance classifier's fixed category enum, mapped to the display
+# names of AI Pulse's 6-category taxonomy (see product spec section 2.4).
+CLASSIFIER_CATEGORY_LABELS = {
+    "model_release": "Model Releases",
+    "product_update": "AI Products & Tools",
+    "research_breakthrough": "AI Research",
+    "industry_news": "Industry & Business",
+    "ai_infrastructure": "AI Infrastructure",
+    "regulation_security": "Regulation & Security",
+}
+
+
 class ArticlePersistenceService:
 
     def _get_or_create_category(
@@ -84,7 +96,17 @@ class ArticlePersistenceService:
         article.feed_type = result["feed_type"]
         article.importance_reason = result["importance_reason"]
 
-        # 2. Keep classification separate from enrichment.
+        # 2. Assign the article's category from the classifier's fixed
+        # taxonomy (not the enrichment step's free-text category).
+        category_label = CLASSIFIER_CATEGORY_LABELS.get(result["category"])
+
+        if category_label:
+            category = self._get_or_create_category(db, category_label)
+
+            if category not in article.categories:
+                article.categories.append(category)
+
+        # 3. Keep classification separate from enrichment.
         # The caller controls the transaction.
         db.flush()
 
@@ -108,18 +130,7 @@ class ArticlePersistenceService:
         article.content_type = result["content_type"]
         article.importance_score = float(result["importance_score"])
 
-        # 2. Save category
-        category_name = result["category"].strip()
-
-        if category_name:
-            category = self._get_or_create_category(
-                db, category_name
-            )
-
-            if category not in article.categories:
-                article.categories.append(category)
-
-        # 3. Save topics as tags
+        # 2. Save topics as tags
         for topic in result["topics"]:
             topic = topic.strip()
 
@@ -131,7 +142,7 @@ class ArticlePersistenceService:
             if tag not in article.tags:
                 article.tags.append(tag)
 
-        # 4. Save companies, models and tools as entities
+        # 3. Save companies, models and tools as entities
         entity_groups = {
             "companies": "company",
             "models": "model",
@@ -161,7 +172,7 @@ class ArticlePersistenceService:
                 if entity not in article.entities:
                     article.entities.append(entity)
 
-        # 5. Save or update article summary
+        # 4. Save or update article summary
         model_name = settings.LLM_MODEL
 
         summary = db.query(ArticleSummary).filter(
@@ -189,7 +200,7 @@ class ArticlePersistenceService:
             summary.detailed_summary = detailed_summary
             summary.why_it_matters = result["importance_reason"]
 
-        # 6. Update processing status
+        # 5. Update processing status
         article.processing_status = "processed"
 
         # Caller controls the transaction

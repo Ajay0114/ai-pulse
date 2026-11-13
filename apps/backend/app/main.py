@@ -5,6 +5,7 @@ from app.api.routes import health
 from app.core.config import settings
 from app.api.routes import sources
 from app.api.routes import articles
+from app.api.routes import categories
 
 
 app = FastAPI(
@@ -26,6 +27,7 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api/v1", tags=["Health"])
 app.include_router(sources.router, prefix="/api/v1", tags=["Sources"])
+app.include_router(categories.router, prefix="/api/v1", tags=["Categories"])
 
 app.include_router(
     articles.router,

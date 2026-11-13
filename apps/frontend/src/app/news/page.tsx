@@ -3,50 +3,27 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
+import ArticleCard from "@/components/ArticleCard";
+import { Article, ArticleListResponse } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-type Article = {
-  id: string;
-  title: string;
-  description?: string | null;
-  original_url: string;
-  author?: string | null;
-  published_at?: string | null;
-  discovered_at: string;
-  content_type: string;
-  source: {
-    id: string;
-    name: string;
-    platform?: string | null;
-  };
-};
 
 type Source = {
   id: string;
   name: string;
 };
 
-type ArticleResult = {
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  articles: Article[];
+type CategoryOption = {
+  id: string;
+  name: string;
+  slug: string;
+  article_count: number;
 };
-
-function formatDate(value?: string | null) {
-  if (!value) return "Date unavailable";
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -54,7 +31,7 @@ export default function NewsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sourceId, setSourceId] = useState("");
-  const [contentType, setContentType] = useState("");
+  const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
   const [loading, setLoading] = useState(true);
@@ -69,11 +46,12 @@ export default function NewsPage() {
         page: String(page),
         page_size: "10",
         sort_by: sortBy,
+        feed_type: "main",
       });
 
       if (search) params.set("search", search);
       if (sourceId) params.set("source_id", sourceId);
-      if (contentType) params.set("content_type", contentType);
+      if (category) params.set("category", category);
 
       const response = await fetch(`${API}/articles/?${params}`);
 
@@ -81,7 +59,7 @@ export default function NewsPage() {
         throw new Error(`Article API returned HTTP ${response.status}`);
       }
 
-      const data: ArticleResult = await response.json();
+      const data: ArticleListResponse = await response.json();
 
       setArticles(data.articles ?? []);
       setTotal(data.total ?? 0);
@@ -93,7 +71,7 @@ export default function NewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, sourceId, contentType, sortBy]);
+  }, [page, search, sourceId, category, sortBy]);
 
   useEffect(() => {
     loadArticles();
@@ -102,23 +80,35 @@ export default function NewsPage() {
   useEffect(() => {
     async function loadSources() {
       try {
-        const response = await fetch(`${API}/sources/?page=1&page_size=100`);
+        const response = await fetch(`${API}/sources/?skip=0&limit=100`);
 
         if (!response.ok) return;
 
         const data = await response.json();
 
-        const sourceList = Array.isArray(data)
-          ? data
-          : data.sources ?? data.items ?? data.results ?? [];
-
-        setSources(sourceList);
+        setSources(data.items ?? []);
       } catch (err) {
         console.error("Unable to load sources:", err);
       }
     }
 
     loadSources();
+  }, []);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const response = await fetch(`${API}/categories/`);
+
+        if (!response.ok) return;
+
+        setCategories(await response.json());
+      } catch (err) {
+        console.error("Unable to load categories:", err);
+      }
+    }
+
+    loadCategories();
   }, []);
 
   function applySearch() {
@@ -130,7 +120,7 @@ export default function NewsPage() {
     setSearchInput("");
     setSearch("");
     setSourceId("");
-    setContentType("");
+    setCategory("");
     setSortBy("newest");
     setPage(1);
   }
@@ -190,7 +180,7 @@ export default function NewsPage() {
           <div className="mb-5">
             <h2 className="text-lg font-semibold">Search and filters</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Find articles using keywords, publishers and content types.
+              Find articles using keywords, publishers and categories.
             </p>
           </div>
 
@@ -241,21 +231,22 @@ export default function NewsPage() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Content type
+                Category
               </label>
               <select
-                value={contentType}
+                value={category}
                 onChange={(e) => {
-                  setContentType(e.target.value);
+                  setCategory(e.target.value);
                   setPage(1);
                 }}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"
               >
-                <option value="">All content types</option>
-                <option value="article">Articles</option>
-                <option value="research_paper">Research papers</option>
-                <option value="blog">Blogs</option>
-                <option value="announcement">Announcements</option>
+                <option value="">All categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {c.name} ({c.article_count})
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -325,46 +316,7 @@ export default function NewsPage() {
           {!loading &&
             !error &&
             articles.map((article) => (
-              <article
-                key={article.id}
-                className="border-b border-slate-100 py-5 last:border-0"
-              >
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="rounded-md bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">
-                    {article.source?.name ?? "Unknown publisher"}
-                  </span>
-                  <span className="rounded-md bg-slate-100 px-2.5 py-1 text-slate-600">
-                    {article.content_type}
-                  </span>
-                  <span className="text-slate-400">
-                    {formatDate(article.published_at)}
-                  </span>
-                </div>
-
-                <h3 className="mt-3 text-base font-semibold leading-6 text-slate-900">
-                  {article.title}
-                </h3>
-
-                {article.description && (
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {article.description}
-                  </p>
-                )}
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs text-slate-400">
-                    {article.author || "Author not specified"}
-                  </span>
-                  <a
-                    href={article.original_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-800"
-                  >
-                    Read original article ↗
-                  </a>
-                </div>
-              </article>
+              <ArticleCard key={article.id} article={article} />
             ))}
 
           <div className="flex items-center justify-between border-t border-slate-100 pt-4">

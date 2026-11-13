@@ -19,6 +19,8 @@ def list_articles(
     search: str | None = None,
     source_id: UUID | None = None,
     content_type: str | None = None,
+    feed_type: str | None = Query(None, pattern="^(main|research)$"),
+    category: str | None = None,
     published_from: datetime | None = None,
     published_to: datetime | None = None,
     sort_by: str = Query("newest", pattern="^(newest|oldest|importance)$"),
@@ -37,6 +39,8 @@ def list_articles(
         search=search,
         source_id=source_id,
         content_type=content_type,
+        feed_type=feed_type,
+        category=category,
         published_from=published_from,
         published_to=published_to,
         sort_by=sort_by,
@@ -57,12 +61,14 @@ def list_articles(
 def latest_articles(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    feed_type: str | None = Query(None, pattern="^(main|research)$"),
     db: Session = Depends(get_db),
 ):
     articles, total = get_articles(
         db=db,
         page=page,
         page_size=page_size,
+        feed_type=feed_type,
         sort_by="newest",
     )
 

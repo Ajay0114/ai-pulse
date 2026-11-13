@@ -9,6 +9,7 @@ import feedparser
 import httpx
 from bs4 import BeautifulSoup
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
 
 from app.db.session import SessionLocal
 from app.models.article import Article
@@ -151,7 +152,16 @@ def is_high_signal_arxiv_entry(entry) -> bool:
     )
 
 
-def ingest_source(source_id) -> dict:
+def ingest_source(source_id, backfill_days: int | None = None) -> dict:
+    """
+    Fetch and store new articles for one source.
+
+    backfill_days: when set, accept entries back to this many days ago
+    regardless of the source's last successful fetch. Used for a one-time
+    historical backfill; actual depth is limited by what the feed itself
+    currently exposes. Leave unset for normal incremental polling.
+    """
+
     started_at = datetime.now(timezone.utc)
 
     result = {
@@ -177,7 +187,10 @@ def ingest_source(source_id) -> dict:
         # Failed fetches must never advance this watermark.
         last_successful_fetch = source.last_fetched_at
 
-        if last_successful_fetch is None:
+        if backfill_days is not None:
+            fetch_cutoff = started_at - timedelta(days=backfill_days)
+            result["fetch_window"] = f"backfill_{backfill_days}_days"
+        elif last_successful_fetch is None:
             fetch_cutoff = started_at - INITIAL_LOOKBACK
             result["fetch_window"] = "initial_24_hours"
         else:
@@ -327,10 +340,25 @@ def ingest_source(source_id) -> dict:
                     processing_status="pending",
                 )
 
-                db.add(article)
-                db.flush()
+                # A savepoint keeps one duplicate (source_id, external_id)
+                # from rolling back every article already flushed in this
+                # batch - only this single entry is skipped.
+                try:
+                    with db.begin_nested():
+                        db.add(article)
+                        db.flush()
 
-                result["created"] += 1
+                    result["created"] += 1
+
+                except IntegrityError:
+                    result["skipped"] += 1
+
+                    logger.warning(
+                        "Skipped duplicate article | source=%s | "
+                        "external_id=%s",
+                        source.id,
+                        external_id,
+                    )
 
             completed_at = datetime.now(timezone.utc)
 

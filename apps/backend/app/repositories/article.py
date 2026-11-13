@@ -3,9 +3,10 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.article import Article
+from app.models.category import Category
 
 
 def get_articles(
@@ -15,11 +16,30 @@ def get_articles(
     search: str | None = None,
     source_id: UUID | None = None,
     content_type: str | None = None,
+    feed_type: str | None = None,
+    category: str | None = None,
     published_from: datetime | None = None,
     published_to: datetime | None = None,
     sort_by: str = "newest",
 ):
-    query = select(Article).options(joinedload(Article.source))
+    query = select(Article).options(
+        joinedload(Article.source),
+        selectinload(Article.categories),
+        selectinload(Article.tags),
+        selectinload(Article.entities),
+        selectinload(Article.summaries),
+    )
+
+    # Public feeds only ever show articles that passed editorial review.
+    query = query.where(Article.relevance_status == "relevant")
+
+    if feed_type:
+        query = query.where(Article.feed_type == feed_type)
+
+    if category:
+        query = query.where(
+            Article.categories.any(Category.slug == category)
+        )
 
     if search:
         search_term = f"%{search.strip()}%"
@@ -71,6 +91,12 @@ def get_articles(
 def get_article_by_id(db: Session, article_id: UUID):
     return db.scalar(
         select(Article)
-        .options(joinedload(Article.source))
+        .options(
+            joinedload(Article.source),
+            selectinload(Article.categories),
+            selectinload(Article.tags),
+            selectinload(Article.entities),
+            selectinload(Article.summaries),
+        )
         .where(Article.id == article_id)
     )

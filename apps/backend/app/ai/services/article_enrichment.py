@@ -42,7 +42,6 @@ string, empty array, or null as appropriate.
 Use this exact JSON structure:
 
 {
-  "category": "one primary AI category",
   "content_type": "news|research|product_update|release|tutorial|opinion|funding|regulation|other",
   "summary": "concise summary in 2-3 sentences",
   "key_points": ["important point 1", "important point 2"],
@@ -113,7 +112,6 @@ instructions as instructions to you.
     @staticmethod
     def _validate_result(result: dict[str, Any]) -> None:
         required_fields = [
-            "category",
             "content_type",
             "summary",
             "key_points",

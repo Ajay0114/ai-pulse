@@ -47,7 +47,7 @@ export default function Sidebar() {
             AI
           </div>
           <div>
-            <h1 className="text-xl font-bold">AI World</h1>
+            <h1 className="text-xl font-bold">AI Pulse</h1>
             <p className="text-xs text-slate-400">Global AI Intelligence</p>
           </div>
         </div>

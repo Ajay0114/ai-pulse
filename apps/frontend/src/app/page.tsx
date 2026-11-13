@@ -2,48 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import ArticleCard from "@/components/ArticleCard";
+import { Article, ArticleListResponse, Source } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-type Article = {
-  id: string;
-  title: string;
-  description?: string | null;
-  original_url: string;
-  author?: string | null;
-  published_at?: string | null;
-  discovered_at: string;
-  content_type: string;
-  source: {
-    id: string;
-    name: string;
-    platform?: string | null;
-  };
-};
-
-type ArticleResult = {
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  articles: Article[];
-};
-
-type Source = {
-  id: string;
-  name: string;
-  health_status?: string;
-  is_active: boolean;
-};
-
-function formatDate(value?: string | null) {
-  if (!value) return "Date unavailable";
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -74,7 +36,7 @@ export default function Home() {
         throw new Error(`Article API returned HTTP ${response.status}`);
       }
 
-      const data: ArticleResult = await response.json();
+      const data: ArticleListResponse = await response.json();
 
       setArticles(data.articles ?? []);
       setTotalArticles(data.total ?? 0);
@@ -95,11 +57,11 @@ export default function Home() {
   useEffect(() => {
     async function loadSources() {
       try {
-        const response = await fetch(`${API}/sources/?page=1&page_size=100`);
+        const response = await fetch(`${API}/sources/?skip=0&limit=100`);
         if (!response.ok) return;
 
         const data = await response.json();
-        setSources(Array.isArray(data) ? data : data.sources ?? []);
+        setSources(data.items ?? []);
       } catch {
         // Source statistics remain unavailable if the API cannot be reached.
       }
@@ -157,7 +119,7 @@ export default function Home() {
               <StatCard
                 label="Articles collected"
                 value={totalArticles.toLocaleString()}
-                detail="Across indexed sources"
+                detail="Relevant, AI Pulse-reviewed stories"
                 icon="▤"
               />
               <StatCard
@@ -224,46 +186,7 @@ export default function Home() {
                 {!loading &&
                   !error &&
                   articles.map((article) => (
-                    <article
-                      key={article.id}
-                      className="border-b border-slate-100 py-5 last:border-0"
-                    >
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="rounded-md bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">
-                          {article.source?.name ?? "Unknown source"}
-                        </span>
-                        <span className="text-slate-400">
-                          {article.content_type}
-                        </span>
-                        <span className="text-slate-400">
-                          {formatDate(article.published_at)}
-                        </span>
-                      </div>
-
-                      <h4 className="mt-3 text-base font-semibold leading-6 text-slate-900">
-                        {article.title}
-                      </h4>
-
-                      {article.description && (
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
-                          {article.description}
-                        </p>
-                      )}
-
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-400">
-                          {article.author || "Author not specified"}
-                        </span>
-                        <a
-                          href={article.original_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-800"
-                        >
-                          Read original article ↗
-                        </a>
-                      </div>
-                    </article>
+                    <ArticleCard key={article.id} article={article} />
                   ))}
               </div>
 
