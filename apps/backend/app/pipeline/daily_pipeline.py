@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import and_, or_, select
 
+from app.core.logging_config import configure_logging, to_ist
 from app.db.session import SessionLocal
 from app.models import Article
 from app.services.rss_ingestion import ingest_all_healthy_sources
@@ -220,8 +221,8 @@ async def run_daily_pipeline():
         "Maximum attempts reached   : %s",
         summary["max_attempts_reached"],
     )
-    logger.info("Started                    : %s", started_at)
-    logger.info("Completed                  : %s", completed_at)
+    logger.info("Started                    : %s", to_ist(started_at))
+    logger.info("Completed                  : %s", to_ist(completed_at))
     logger.info("=============================================")
 
     return summary
@@ -229,9 +230,6 @@ async def run_daily_pipeline():
 
 if __name__ == "__main__":
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-    )
+    configure_logging()
 
     asyncio.run(run_daily_pipeline())

@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy import select
 
+from app.core.logging_config import configure_logging
 from app.db.session import SessionLocal
 from app.models import Article, ArticleEmbedding
 from app.ai.services.article_embedding import ArticleEmbeddingService
@@ -12,10 +13,7 @@ from app.ai.services.article_embedding import ArticleEmbeddingService
 BATCH_SIZE = 10
 REQUEST_DELAY_SECONDS = 1
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
+configure_logging()
 
 logger = logging.getLogger("ai-pulse-embeddings")
 

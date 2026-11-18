@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from app.ai.llm_service import LLMService
 from app.ai.services.article_persistence import create_slug
+from app.core.logging_config import configure_logging
 from app.db.session import SessionLocal
 from app.models.associations import article_categories
 from app.models.category import Category
@@ -197,9 +198,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-    )
+    configure_logging()
 
     asyncio.run(normalize_categories(apply=args.apply))

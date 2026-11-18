@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 
+from app.core.logging_config import configure_logging
 from app.db.session import SessionLocal
 from app.models.article import Article
 from app.models.ingestion_log import IngestionLog
@@ -478,7 +479,7 @@ def ingest_all_healthy_sources() -> dict:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    configure_logging()
 
     summary = ingest_all_healthy_sources()
 

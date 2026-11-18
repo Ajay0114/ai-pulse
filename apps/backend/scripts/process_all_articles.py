@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from app.ai.services.article_processor import ArticleProcessor
+from app.core.logging_config import configure_logging
 from app.db.session import SessionLocal
 from app.models import Article
 
@@ -15,10 +16,7 @@ BATCH_SIZE = 500
 # Rolling publication-date window.
 LOOKBACK_DAYS = 365
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
+configure_logging()
 
 logger = logging.getLogger("ai-pulse-bulk-processor")
 

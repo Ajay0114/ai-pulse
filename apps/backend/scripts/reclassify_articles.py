@@ -11,6 +11,7 @@ from sqlalchemy import select
 
 from app.ai.services.article_relevance import ArticleRelevanceService
 from app.ai.services.article_persistence import ArticlePersistenceService
+from app.core.logging_config import configure_logging
 from app.db.session import SessionLocal
 from app.models import Article
 
@@ -22,13 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_FILE = BASE_DIR / "data" / "reclassification_errors.jsonl"
 
 logger = logging.getLogger("ai-pulse-reclassification")
-
-
-def configure_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-    )
 
 
 def get_article_ids():

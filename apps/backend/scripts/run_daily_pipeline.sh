@@ -9,6 +9,6 @@ cd "$(dirname "$0")/.."
 source .venv/bin/activate
 
 mkdir -p logs
-LOG_FILE="logs/daily_pipeline_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="logs/daily_pipeline_$(TZ='Asia/Kolkata' date +%Y%m%d_%H%M%S)_IST.log"
 
 python -m app.pipeline.daily_pipeline >> "$LOG_FILE" 2>&1

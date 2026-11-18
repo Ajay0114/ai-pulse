@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy import select
 
+from app.core.logging_config import configure_logging
 from app.db.session import SessionLocal
 from app.models.source import Source
 from app.services.rss_ingestion import ingest_source
@@ -79,10 +80,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-    )
+    configure_logging()
 
     summary = backfill_all_sources(lookback_days=args.days)
 
